@@ -48,7 +48,7 @@ function filterCard(card) {
 
     // Skip if already viewed, saved, or applied
     const statusMatch = [...card.querySelectorAll('p')]
-        .find(p => /^(Viewed|Saved|Applied)$/.test(p.innerText.trim()));
+        .find(p => /^(Saved|Applied)$/.test(p.innerText.trim()));
     if (statusMatch) {
         return { pass: false, reason: `Already ${statusMatch.innerText.trim()}` };
     }
@@ -125,7 +125,7 @@ function filterAndSave() {
     }
 
     // Get full page text once for both experience and description checks
-    const pageText = document.body.innerText.toLowerCase();
+    const pageText = document.querySelector('div[data-sdui-screen="com.linkedin.sdui.flagshipnav.jobs.SemanticJobDetails"]').innerText.toLowerCase()
 
     // Experience — must not require more than 3 years
     if (EXPERIENCE_EXCLUDE.test(pageText)) {
@@ -155,7 +155,8 @@ function filterAndSave() {
 // ══════════════════════════════════════════════════════════════════════════════
 
 async function processCards() {
-    const dismissBtns = document.querySelectorAll('button[aria-label^="Dismiss"]');
+    const searchResults = document.querySelector('div[componentkey="SearchResultsMainContent"]')
+    const dismissBtns = searchResults.querySelectorAll('button[aria-label^="Dismiss"]');
     console.log(`Found ${dismissBtns.length} job cards\n`);
     let saved = 0, skipped = 0;
 
@@ -164,6 +165,7 @@ async function processCards() {
         const rawLabel = dismissBtn.getAttribute('aria-label');
         const cardTitle = rawLabel.replace(/^Dismiss\s+/, '').replace(/\s+job$/, '').trim();
         console.log(`--- Card: "${cardTitle}" ---`);
+        
 
         const card = dismissBtn.closest('div[role="button"]');
         if (!card) {
@@ -177,7 +179,7 @@ async function processCards() {
         if (!cardResult.pass) {
             console.log(`SKIP (card): ${cardResult.reason}`);
             skipped++;
-            dismissBtn.click();
+            // dismissBtn.click();
             await new Promise(r => setTimeout(r, 500));
             continue;
         }
@@ -197,7 +199,7 @@ async function processCards() {
         }
 
         // Dismiss the card regardless of outcome so LinkedIn stops showing it
-        dismissBtn.click();
+        // dismissBtn.click();
         await new Promise(r => setTimeout(r, 500));
     }
 
