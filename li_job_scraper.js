@@ -1,141 +1,211 @@
-// ── Excluded keywords in job description ──────────────────────────────────────
-const DESCRIPTION_EXCLUDE = [
-    "sponsorship", "tsa", "clearance", "clearances", "green card",
-    "must be a us citizen", "must be a u.s. citizen",
-    "us citizenship", "u.s. citizenship", "us work authorization", "u.s. work authorization"
+// ══════════════════════════════════════════════════════════════════════════════
+// LinkedIn Job Saver
+// Filters jobs from the left panel cards first, then loads the right panel
+// for deeper checks, and saves qualifying jobs automatically.
+// ══════════════════════════════════════════════════════════════════════════════
+
+
+// ── Right panel: job title must match one of these (case insensitive) ─────────
+const TITLE_INCLUDE = [
+    "data scientist",
+    "decision scientist",
+    "machine learning engineer",
+    "ml engineer",
+    "artificial intelligence engineer",
+    "ai engineer",
+    "ai/ml engineer",
+    "\\bai\\b.*engineer",   // AI + anything + engineer
 ];
 
-// ── Excluded keywords in job title ────────────────────────────────────────────
-const JOB_TITLE_EXCLUDE = [
+// ── Right panel: job title must NOT contain these words ───────────────────────
+const TITLE_EXCLUDE = [
     "analyst", "intern", "manager", "senior", "quant", "quantitative", "staff", "lead"
 ];
 
-const COMPANY_EXCLUDE = ["dataannotation", "booz allen hamilton", "inside higher ed", "tiktok", "handshake", "jobs via dice", "jobright.ai", "emonics llc", "hackajob", "haystack", "apex systems", "alignerr", "meta", "apple", "amazon", "netflix", "google", 
+// ── Right panel: company name exclusions ──────────────────────────────────────
+const COMPANY_EXCLUDE = [
+    "dataannotation", "booz allen hamilton", "inside higher ed", "tiktok",
+    "handshake", "jobs via dice", "jobright.ai", "emonics llc", "hackajob",
+    "haystack", "apex systems", "alignerr", "meta", "apple", "amazon",
+    "netflix", "google",
 ];
 
-function tryToSaveCurrentJob() {
-    // Get job title from the right panel anchor tag
+// ── Right panel: job description keyword exclusions ───────────────────────────
+const DESCRIPTION_EXCLUDE = [
+    "sponsorship", "tsa", "clearance", "clearances", "green card",
+    "must be a us citizen", "must be a u.s. citizen",
+    "us citizenship", "u.s. citizenship",
+    "us work authorization", "u.s. work authorization"
+];
+
+// ── Right panel: experience year pattern to exclude ───────────────────────────
+// Matches "4+ years", "5+ years", "6+ years" etc.
+const EXPERIENCE_EXCLUDE = /\b([4-9]|10)\+?\s*years?\s+of\s+experience\b/i;
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PHASE 1 — Filter from the left card before clicking anything
+// ══════════════════════════════════════════════════════════════════════════════
+
+function filterCard(card) {
+
+    // Skip if already viewed, saved, or applied
+    const statusMatch = [...card.querySelectorAll('p')]
+        .find(p => /^(Viewed|Saved|Applied)$/.test(p.innerText.trim()));
+    if (statusMatch) {
+        return { pass: false, reason: `Already ${statusMatch.innerText.trim()}` };
+    }
+
+    // Skip Easy Apply — identified by "Easy Apply" text inside a <p> in the card
+    const easyApply = [...card.querySelectorAll('p')]
+        .find(p => p.innerText.includes('Easy Apply'));
+    if (easyApply) {
+        return { pass: false, reason: 'Easy Apply' };
+    }
+
+    // Skip if posting date is older than 6 days
+    // Use aria-hidden span for clean text without "Posted" prefix
+    const timeSpan = [...card.querySelectorAll('span[aria-hidden="true"]')]
+        .find(s => /\d+\s+(second|minute|hour|day|week|month|year)s?\s+ago/i.test(s.innerText.trim()));
+    if (!timeSpan) {
+        return { pass: false, reason: 'Could not find posting date' };
+    }
+    const timeText = timeSpan.innerText.trim();
+    const timeMatch = timeText.match(/(\d+)\s+(second|minute|hour|day|week|month|year)s?/i);
+    if (timeMatch) {
+        const value = parseInt(timeMatch[1]);
+        const unit = timeMatch[2].toLowerCase();
+        if (unit === 'week' || unit === 'month' || unit === 'year') {
+            return { pass: false, reason: `Too old — "${timeText}"` };
+        }
+        const days = unit === 'day'    ? value
+                   : unit === 'hour'   ? value / 24
+                   : unit === 'minute' ? value / 1440
+                   : 0;
+        if (days > 6) {
+            return { pass: false, reason: `Too old — "${timeText}"` };
+        }
+    }
+
+    return { pass: true };
+}
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PHASE 2 — Filter from the right panel after clicking the card
+// ══════════════════════════════════════════════════════════════════════════════
+
+function filterAndSave() {
+
+    // Job title — must match one of the allowed titles
     const jobLink = document.querySelector('a[href*="/jobs/view/"]');
     if (!jobLink) {
-        console.log('SKIP: Could not find job title link');
-        return;
+        return { pass: false, reason: 'Could not find job title link' };
     }
     const jobTitle = jobLink.innerText.trim();
-    console.log('Job title:', jobTitle);
 
-    // Check jobTitle against excluded keywords
-    const jobTitleLower = jobTitle.toLowerCase();
-    const jobTitleMatch = JOB_TITLE_EXCLUDE.find(k => new RegExp(`\\b${k}\\b`, 'i').test(jobTitleLower));
-    if (jobTitleMatch) {
-        console.log(`SKIP: jobTitle contains "${jobTitleMatch}"`);
-        return;
+    // Must match at least one allowed title
+    const titleIncludeMatch = TITLE_INCLUDE.find(k => new RegExp(`\\b${k}\\b`, 'i').test(jobTitle));
+    if (!titleIncludeMatch) {
+        return { pass: false, reason: `Title "${jobTitle}" does not match allowed titles` };
     }
 
-    // Get company title from the right panel anchor tag
+    // Must not contain any excluded title words
+    const titleExcludeMatch = TITLE_EXCLUDE.find(k => new RegExp(`\\b${k}\\b`, 'i').test(jobTitle));
+    if (titleExcludeMatch) {
+        return { pass: false, reason: `Title "${jobTitle}" contains excluded word "${titleExcludeMatch}"` };
+    }
+
+    // Company name — must not be in exclusion list
     const companyLink = document.querySelector('a[href*="/company/"]');
     if (!companyLink) {
-        console.log('SKIP: Could not find company title link');
-        return;
+        return { pass: false, reason: 'Could not find company link' };
     }
-    const companyTitle = companyLink.innerText.trim();
-    console.log('company title:', companyTitle);
-
-    // Check company companyTitle against excluded keywords
-    const companyTitleLower = companyTitle.toLowerCase();
-    const companyTitleMatch = COMPANY_EXCLUDE.find(k => new RegExp(`\\b${k}\\b`, 'i').test(companyTitleLower));
-    if (companyTitleMatch) {
-        console.log(`SKIP: companyTitle contains "${companyTitleMatch}"`);
-        return;
+    const companyName = companyLink.innerText.trim();
+    const companyMatch = COMPANY_EXCLUDE.find(k => new RegExp(`\\b${k}\\b`, 'i').test(companyName.toLowerCase()));
+    if (companyMatch) {
+        return { pass: false, reason: `Company excluded — "${companyName}"` };
     }
 
-    // Check for Easy Apply anchor tag in right panel
-    const easyApply = document.querySelector('a[aria-label="Easy Apply to this job"]');
-    if (easyApply) {
-        console.log('SKIP: Easy Apply');
-        return;
-    }
-
-    // Check page text for excluded description keywords
+    // Get full page text once for both experience and description checks
     const pageText = document.body.innerText.toLowerCase();
+
+    // Experience — must not require more than 3 years
+    if (EXPERIENCE_EXCLUDE.test(pageText)) {
+        const expMatch = pageText.match(EXPERIENCE_EXCLUDE);
+        return { pass: false, reason: `Experience too high — "${expMatch[0]}"` };
+    }
+
+    // Description — must not contain excluded keywords
     const descMatch = DESCRIPTION_EXCLUDE.find(k => new RegExp(`\\b${k}\\b`, 'i').test(pageText));
     if (descMatch) {
-        console.log(`SKIP: Description contains "${descMatch}"`);
-        return;
+        return { pass: false, reason: `Description contains "${descMatch}"` };
     }
 
-    // All checks passed — save
+    // All checks passed — click Save
     const saveBtn = document.querySelector('button[aria-label="Save the job"]');
     if (!saveBtn) {
-        console.log('SKIP: No Save button found — may already be saved');
-        return;
+        return { pass: false, reason: 'No Save button — may already be saved' };
     }
 
     saveBtn.click();
-    console.log(`SAVED: "${jobTitle}"`);
+    return { pass: true, title: jobTitle, company: companyName };
 }
 
-// ── Click through all cards and process each ──────────────────────────────────
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MAIN — iterate through all cards
+// ══════════════════════════════════════════════════════════════════════════════
+
 const dismissBtns = document.querySelectorAll('button[aria-label^="Dismiss"]');
-console.log(`Found ${dismissBtns.length} job cards`);
+console.log(`Found ${dismissBtns.length} job cards\n`);
 
 async function processCards() {
+    let saved = 0, skipped = 0;
+
     for (const dismissBtn of dismissBtns) {
+
         const rawLabel = dismissBtn.getAttribute('aria-label');
-        const jobTitle = rawLabel.replace(/^Dismiss\s+/, '').replace(/\s+job$/, '').trim();
-        console.log(`\n--- Loading: "${jobTitle}" ---`);
+        const cardTitle = rawLabel.replace(/^Dismiss\s+/, '').replace(/\s+job$/, '').trim();
+        console.log(`--- Card: "${cardTitle}" ---`);
 
         const card = dismissBtn.closest('div[role="button"]');
-
         if (!card) {
-            console.log('SKIP: Could not find card');
+            console.log('SKIP: Could not find card element');
+            skipped++;
             continue;
         }
 
-        // Find the time span inside the card — use the aria-hidden one since it has clean text
-        const timeSpan = [...card.querySelectorAll('span')]
-            .find(s => /\d+\s+(second|minute|hour|day|week|month|year)s?\s+ago/i.test(s.innerText.trim()));
-
-        if (!timeSpan) {
-            console.log('SKIP: Could not find posting time');
+        // Phase 1 — left card filters
+        const cardResult = filterCard(card);
+        if (!cardResult.pass) {
+            console.log(`SKIP (card): ${cardResult.reason}`);
+            skipped++;
+            dismissBtn.click();
+            await new Promise(r => setTimeout(r, 500));
             continue;
         }
 
-        const timeText = timeSpan.innerText.trim();
-        console.log('Posted:', timeText);
-
-        // Parse the time and filter out anything older than 6 days
-        const match = timeText.match(/(\d+)\s+(second|minute|hour|day|month|year)s?/i);
-        if (match) {
-            const value = parseInt(match[1]);
-            const unit = match[2].toLowerCase();
-
-            // anything in months or years is immediately stale
-            if (unit === 'month' || unit === 'year') {
-                console.log(`SKIP: Too old — "${timeText}"`);
-                continue;
-            }
-
-            // convert to days
-            const days = unit === 'day' ? value
-                    : unit === 'hour' ? value / 24
-                    : unit === 'minute' ? value / 1440
-                    : 0;
-
-            if (days > 6) {
-                console.log(`SKIP: Too old — "${timeText}"`);
-                continue;
-            }
-        }
-
+        // Phase 1 passed — click to load right panel
         card.click();
-
-        // Wait for right panel to load before running checks
         await new Promise(r => setTimeout(r, 2000));
 
-        tryToSaveCurrentJob();
+        // Phase 2 — right panel filters and save
+        const panelResult = filterAndSave();
+        if (!panelResult.pass) {
+            console.log(`SKIP (panel): ${panelResult.reason}`);
+            skipped++;
+        } else {
+            console.log(`SAVED: "${panelResult.title}" at ${panelResult.company}`);
+            saved++;
+        }
+
+        // Dismiss the card regardless of outcome so LinkedIn stops showing it
+        dismissBtn.click();
+        await new Promise(r => setTimeout(r, 500));
     }
 
-    console.log('\nAll done!');
+    console.log(`\nDone! Saved: ${saved} | Skipped: ${skipped}`);
 }
 
 processCards();
