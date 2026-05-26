@@ -27,20 +27,17 @@ const COMPANY_EXCLUDE = [
     "dataannotation", "booz allen hamilton", "inside higher ed", "tiktok",
     "handshake", "jobs via dice", "jobright.ai", "emonics llc", "hackajob",
     "haystack", "apex systems", "alignerr", "meta", "apple", "amazon",
-    "netflix", "google",
+    "netflix", "google", "openai", "doordash", "shipt"
 ];
 
 // ── Right panel: job description keyword exclusions ───────────────────────────
 const DESCRIPTION_EXCLUDE = [
-    "sponsorship", "tsa", "clearance", "clearances", "green card",
-    "must be a us citizen", "must be a u.s. citizen",
-    "us citizenship", "u.s. citizenship",
-    "us work authorization", "u.s. work authorization"
+    "sponsorship", "sponsoring", "tsa", "tsc/sci", "polygraph", "clearance", "clearances", "green card", "must be a us citizen", "must be a u.s. citizen", "us citizenship", "u.s. citizenship", "us work authorization", "u.s. work authorization"
 ];
 
 // ── Right panel: experience year pattern to exclude ───────────────────────────
-// Matches "4+ years", "5+ years", "6+ years" etc.
-const EXPERIENCE_EXCLUDE = /\b([4-9]|10)\+?\s*years?\s+of\s+experience\b/i;
+// Matches "3+ years", "4+ years", "5+ years", "6+ years" etc.
+const EXPERIENCE_EXCLUDE = /\b([3-9]|10)\+?\s*years?\s+of\s+experience\b/i;
 
 
 // ══════════════════════════════════════════════════════════════════════════════
