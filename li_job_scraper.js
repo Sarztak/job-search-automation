@@ -207,6 +207,35 @@ async function processCards() {
     console.log(`\nDone! Saved: ${saved} | Skipped: ${skipped}`);
 }
 
+function waitForResume() {
+    return new Promise((resolve) => {
+        // Create Next Page button
+        const nextPageBtn = document.createElement('button');
+        nextPageBtn.innerText = 'Next Page';
+        nextPageBtn.style.cssText = 'position:fixed; bottom:30px; right:30px; z-index:9999; padding:10px 20px; background:green; color:white; border:none; border-radius:5px; cursor:pointer; font-size:16px;';
+
+        // Create Stop button
+        const stopBtn = document.createElement('button');
+        stopBtn.innerText = 'Stop';
+        stopBtn.style.cssText = 'position:fixed; bottom:30px; right:150px; z-index:9999; padding:10px 20px; background:red; color:white; border:none; border-radius:5px; cursor:pointer; font-size:16px;';
+
+        document.body.appendChild(nextPageBtn);
+        document.body.appendChild(stopBtn);
+
+        nextPageBtn.addEventListener('click', () => {
+            nextPageBtn.remove();
+            stopBtn.remove();
+            resolve(true);
+        });
+
+        stopBtn.addEventListener('click', () => {
+            nextPageBtn.remove();
+            stopBtn.remove();
+            resolve(false);
+        });
+    });
+}
+
 async function run(totalPages = 5) {
     for (let page = 1; page <= totalPages; page++) {
         console.log(`\n═══ Page ${page} of ${totalPages} ═══`);
@@ -214,7 +243,14 @@ async function run(totalPages = 5) {
         // Process all cards on current page and wait for it to finish
         await processCards();
 
-        // Then click next
+
+        // Pause — gives you time to review before moving on
+        const shouldContinue = await waitForResume();
+        if (!shouldContinue) {
+            console.log('Stopped by user.');
+            break;
+        }        // Then click next
+
         const nextBtn = document.querySelector('[data-testid="pagination-controls-next-button-visible"]');
         if (!nextBtn) {
             console.log('No next button found — stopping early');
