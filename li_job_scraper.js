@@ -1,12 +1,13 @@
 // ── Excluded keywords in job description ──────────────────────────────────────
 const DESCRIPTION_EXCLUDE = [
-    "sponsorship", "tsa", "clearance", "green card",
-    "must be a us citizen", "must be a u.s. citizen"
+    "sponsorship", "tsa", "clearance", "clearances", "green card",
+    "must be a us citizen", "must be a u.s. citizen",
+    "us citizenship", "u.s. citizenship", "us work authorization", "u.s. work authorization"
 ];
 
 // ── Excluded keywords in job title ────────────────────────────────────────────
 const JOB_TITLE_EXCLUDE = [
-    "analyst", "intern", "manager", "senior", "quant", "quantitative", "staff"
+    "analyst", "intern", "manager", "senior", "quant", "quantitative", "staff", "lead"
 ];
 
 const COMPANY_EXCLUDE = ["dataannotation", "booz allen hamilton", "inside higher ed", "tiktok", "handshake", "jobs via dice", "jobright.ai", "emonics llc", "hackajob", "haystack", "apex systems", "alignerr", "meta", "apple", "amazon", "netflix", "google", 
