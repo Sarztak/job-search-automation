@@ -19,7 +19,7 @@ const TITLE_INCLUDE = [
 
 // ── Right panel: job title must NOT contain these words ───────────────────────
 const TITLE_EXCLUDE = [
-    "analyst", "intern", "manager", "senior", "quant", "quantitative", "staff", "lead"
+    "analyst", "intern", "manager", "senior", "quant", "quantitative", "staff", "lead", "sr"
 ];
 
 // ── Right panel: company name exclusions ──────────────────────────────────────
@@ -157,10 +157,9 @@ function filterAndSave() {
 // MAIN — iterate through all cards
 // ══════════════════════════════════════════════════════════════════════════════
 
-const dismissBtns = document.querySelectorAll('button[aria-label^="Dismiss"]');
-console.log(`Found ${dismissBtns.length} job cards\n`);
-
 async function processCards() {
+    const dismissBtns = document.querySelectorAll('button[aria-label^="Dismiss"]');
+    console.log(`Found ${dismissBtns.length} job cards\n`);
     let saved = 0, skipped = 0;
 
     for (const dismissBtn of dismissBtns) {
@@ -208,4 +207,25 @@ async function processCards() {
     console.log(`\nDone! Saved: ${saved} | Skipped: ${skipped}`);
 }
 
-processCards();
+async function run(totalPages = 5) {
+    for (let page = 1; page <= totalPages; page++) {
+        console.log(`\n═══ Page ${page} of ${totalPages} ═══`);
+
+        // Process all cards on current page and wait for it to finish
+        await processCards();
+
+        // Then click next
+        const nextBtn = document.querySelector('[data-testid="pagination-controls-next-button-visible"]');
+        if (!nextBtn) {
+            console.log('No next button found — stopping early');
+            break;
+        }
+
+        nextBtn.click();
+        await new Promise(r => setTimeout(r, 3000));
+    }
+
+    console.log('\nAll pages done!');
+}
+
+run(3);
