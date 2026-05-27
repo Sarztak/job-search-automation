@@ -94,8 +94,41 @@ function filterCard(card) {
 
 function filterAndSave() {
 
+    // order of filtering - 
+    // 1. Sponsorship & Clearance
+    // 2. Experience
+    // 3. Company Name
+    // 4. Job Title
+    
+    // Get full page text once for both experience and description checks
+    const jobPage = document.querySelector('div[data-sdui-screen="com.linkedin.sdui.flagshipnav.jobs.SemanticJobDetails"]')
+    const pageText = jobPage.innerText.toLowerCase()
+
+    // Description — must not contain excluded keywords
+    const descMatch = DESCRIPTION_EXCLUDE.find(k => new RegExp(`\\b${k}\\b`, 'i').test(pageText));
+    if (descMatch) {
+        return { pass: false, reason: `Description contains "${descMatch}"` };
+    }
+
+    // Experience — must not require more than 3 years
+    if (EXPERIENCE_EXCLUDE.test(pageText)) {
+        const expMatch = pageText.match(EXPERIENCE_EXCLUDE);
+        return { pass: false, reason: `Experience too high — "${expMatch[0]}"` };
+    }
+
+    // Company name — must not be in exclusion list
+    const companyLink = jobPage.querySelector('a[href*="/company/"]');
+    if (!companyLink) {
+        return { pass: false, reason: 'Could not find company link' };
+    }
+    const companyName = companyLink.innerText.trim();
+    const companyMatch = COMPANY_EXCLUDE.find(k => new RegExp(`\\b${k}\\b`, 'i').test(companyName.toLowerCase()));
+    if (companyMatch) {
+        return { pass: false, reason: `Company excluded — "${companyName}"` };
+    }
+
     // Job title — must match one of the allowed titles
-    const jobLink = document.querySelector('a[href*="/jobs/view/"]');
+    const jobLink = jobPage.querySelector('a[href*="/jobs/view/"]');
     if (!jobLink) {
         return { pass: false, reason: 'Could not find job title link' };
     }
@@ -111,32 +144,6 @@ function filterAndSave() {
     const titleExcludeMatch = TITLE_EXCLUDE.find(k => new RegExp(`\\b${k}\\b`, 'i').test(jobTitle));
     if (titleExcludeMatch) {
         return { pass: false, reason: `Title "${jobTitle}" contains excluded word "${titleExcludeMatch}"` };
-    }
-
-    // Company name — must not be in exclusion list
-    const companyLink = document.querySelector('a[href*="/company/"]');
-    if (!companyLink) {
-        return { pass: false, reason: 'Could not find company link' };
-    }
-    const companyName = companyLink.innerText.trim();
-    const companyMatch = COMPANY_EXCLUDE.find(k => new RegExp(`\\b${k}\\b`, 'i').test(companyName.toLowerCase()));
-    if (companyMatch) {
-        return { pass: false, reason: `Company excluded — "${companyName}"` };
-    }
-
-    // Get full page text once for both experience and description checks
-    const pageText = document.querySelector('div[data-sdui-screen="com.linkedin.sdui.flagshipnav.jobs.SemanticJobDetails"]').innerText.toLowerCase()
-
-    // Experience — must not require more than 3 years
-    if (EXPERIENCE_EXCLUDE.test(pageText)) {
-        const expMatch = pageText.match(EXPERIENCE_EXCLUDE);
-        return { pass: false, reason: `Experience too high — "${expMatch[0]}"` };
-    }
-
-    // Description — must not contain excluded keywords
-    const descMatch = DESCRIPTION_EXCLUDE.find(k => new RegExp(`\\b${k}\\b`, 'i').test(pageText));
-    if (descMatch) {
-        return { pass: false, reason: `Description contains "${descMatch}"` };
     }
 
     // All checks passed — click Save
