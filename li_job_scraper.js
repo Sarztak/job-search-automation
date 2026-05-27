@@ -41,6 +41,97 @@ const EXPERIENCE_EXCLUDE = /\b([3-9]|10)\+?\s*years?\s+of\s+experience\b/i;
 
 
 // ══════════════════════════════════════════════════════════════════════════════
+// VISUALS
+// ══════════════════════════════════════════════════════════════════════════════
+
+// Add a colored border to the card
+function markCard(card, passed, reason) {
+    card.style.outline = passed
+        ? '3px solid #00c853'   // green for saved
+        : '3px solid #d50000';  // red for skipped
+    card.style.outlineOffset = '-3px';
+    card.style.borderRadius = '8px';
+
+    // Add a small label inside the card showing the reason
+    const label = document.createElement('div');
+    label.innerText = passed ? 'SAVED' : `SKIP: ${reason}`;
+    label.style.cssText = `
+        position: absolute;
+        bottom: 4px;
+        left: 4px;
+        z-index: 9999;
+        font-size: 10px;
+        font-weight: bold;
+        padding: 2px 6px;
+        border-radius: 3px;
+        color: white;
+        background: ${passed ? '#00c853' : '#d50000'};
+        pointer-events: none;
+        max-width: 90%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    `;
+    card.style.position = 'relative';
+    card.appendChild(label);
+}
+
+// Inject or update a banner at the top of the right panel
+function showRightPanelBanner(passed, reason) {
+    // Remove any existing banner
+    const existing = document.getElementById('job-saver-banner');
+    if (existing) existing.remove();
+
+    const banner = document.createElement('div');
+    banner.id = 'job-saver-banner';
+    banner.innerText = passed ? 'SAVED' : `SKIPPED — ${reason}`;
+    banner.style.cssText = `
+        position: sticky;
+        top: 0;
+        z-index: 9999;
+        width: 100%;
+        padding: 10px 16px;
+        font-size: 14px;
+        font-weight: bold;
+        color: white;
+        background: ${passed ? '#00c853' : '#d50000'};
+        box-sizing: border-box;
+    `;
+
+    // Inject at the top of the main content area
+    const main = document.querySelector('main') || document.body;
+    main.prepend(banner);
+}
+
+function waitForResume() {
+    return new Promise((resolve) => {
+        // Create Next Page button
+        const nextPageBtn = document.createElement('button');
+        nextPageBtn.innerText = 'Next Page';
+        nextPageBtn.style.cssText = 'position:fixed; bottom:30px; right:30px; z-index:9999; padding:10px 20px; background:green; color:white; border:none; border-radius:5px; cursor:pointer; font-size:16px;';
+
+        // Create Stop button
+        const stopBtn = document.createElement('button');
+        stopBtn.innerText = 'Stop';
+        stopBtn.style.cssText = 'position:fixed; bottom:30px; right:150px; z-index:9999; padding:10px 20px; background:red; color:white; border:none; border-radius:5px; cursor:pointer; font-size:16px;';
+
+        document.body.appendChild(nextPageBtn);
+        document.body.appendChild(stopBtn);
+
+        nextPageBtn.addEventListener('click', () => {
+            nextPageBtn.remove();
+            stopBtn.remove();
+            resolve(true);
+        });
+
+        stopBtn.addEventListener('click', () => {
+            nextPageBtn.remove();
+            stopBtn.remove();
+            resolve(false);
+        });
+    });
+}
+// ══════════════════════════════════════════════════════════════════════════════
 // PHASE 1 — Filter from the left card before clicking anything
 // ══════════════════════════════════════════════════════════════════════════════
 
@@ -185,6 +276,8 @@ async function processCards() {
         const cardResult = filterCard(card);
         if (!cardResult.pass) {
             console.log(`SKIP (card): ${cardResult.reason}`);
+            markCard(card, false, cardResult.reason);
+            showRightPanelBanner(false, cardResult.reason);
             skipped++;
             // dismissBtn.click();
             await new Promise(r => setTimeout(r, 500));
@@ -199,9 +292,13 @@ async function processCards() {
         const panelResult = filterAndSave();
         if (!panelResult.pass) {
             console.log(`SKIP (panel): ${panelResult.reason}`);
+            markCard(card, false, panelResult.reason);
+            showRightPanelBanner(false, panelResult.reason);
             skipped++;
         } else {
             console.log(`SAVED: "${panelResult.title}" at ${panelResult.company}`);
+            markCard(card, true, '');
+            showRightPanelBanner(true, '');
             saved++;
         }
 
@@ -213,34 +310,6 @@ async function processCards() {
     console.log(`\nDone! Saved: ${saved} | Skipped: ${skipped}`);
 }
 
-function waitForResume() {
-    return new Promise((resolve) => {
-        // Create Next Page button
-        const nextPageBtn = document.createElement('button');
-        nextPageBtn.innerText = 'Next Page';
-        nextPageBtn.style.cssText = 'position:fixed; bottom:30px; right:30px; z-index:9999; padding:10px 20px; background:green; color:white; border:none; border-radius:5px; cursor:pointer; font-size:16px;';
-
-        // Create Stop button
-        const stopBtn = document.createElement('button');
-        stopBtn.innerText = 'Stop';
-        stopBtn.style.cssText = 'position:fixed; bottom:30px; right:150px; z-index:9999; padding:10px 20px; background:red; color:white; border:none; border-radius:5px; cursor:pointer; font-size:16px;';
-
-        document.body.appendChild(nextPageBtn);
-        document.body.appendChild(stopBtn);
-
-        nextPageBtn.addEventListener('click', () => {
-            nextPageBtn.remove();
-            stopBtn.remove();
-            resolve(true);
-        });
-
-        stopBtn.addEventListener('click', () => {
-            nextPageBtn.remove();
-            stopBtn.remove();
-            resolve(false);
-        });
-    });
-}
 
 async function run(totalPages = 5) {
     for (let page = 1; page <= totalPages; page++) {
