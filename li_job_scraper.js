@@ -14,12 +14,14 @@ const TITLE_INCLUDE = [
     "artificial intelligence engineer",
     "ai engineer",
     "ai/ml engineer",
+    "ai developer",
     "\\bai\\b.*engineer",   // AI + anything + engineer
+    "\\bai\\b.*developer"   // AI + anything + develop
 ];
 
 // ── Right panel: job title must NOT contain these words ───────────────────────
 const TITLE_EXCLUDE = [
-    "analyst", "intern", "manager", "senior", "quant", "quantitative", "staff", "lead", "sr"
+    "analyst", "intern", "manager", "senior", "quant", "quantitative", "staff", "lead", "sr", "principal"
 ];
 
 // ── Right panel: company name exclusions ──────────────────────────────────────
@@ -27,7 +29,7 @@ const COMPANY_EXCLUDE = [
     "dataannotation", "booz allen hamilton", "inside higher ed", "tiktok",
     "handshake", "jobs via dice", "jobright.ai", "emonics llc", "hackajob",
     "haystack", "apex systems", "alignerr", "meta", "apple", "amazon",
-    "netflix", "google", "openai", "doordash", "shipt"
+    "netflix", "google", "openai", "doordash", "shipt", "affirm", "thermo fisher scientific", "tata consultancy services", "alvarez & marsal", "scale.jobs", "qualcomm"
 ];
 
 // ── Right panel: job description keyword exclusions ───────────────────────────
@@ -163,14 +165,16 @@ function filterCard(card) {
     if (timeMatch) {
         const value = parseInt(timeMatch[1]);
         const unit = timeMatch[2].toLowerCase();
-        if (unit === 'week' || unit === 'month' || unit === 'year') {
-            return { pass: false, reason: `Too old — "${timeText}"` };
-        }
-        const days = unit === 'day'    ? value
-                   : unit === 'hour'   ? value / 24
-                   : unit === 'minute' ? value / 1440
-                   : 0;
-        if (days > 6) {
+
+        const days = unit === 'year'   ? value * 365
+                : unit === 'month'  ? value * 30
+                : unit === 'week'   ? value * 7
+                : unit === 'day'    ? value
+                : unit === 'hour'   ? value / 24
+                : unit === 'minute' ? value / 1440
+                : 0;
+
+        if (days > 14) {
             return { pass: false, reason: `Too old — "${timeText}"` };
         }
     }
@@ -333,7 +337,7 @@ async function run(totalPages = 5) {
         }
 
         nextBtn.click();
-        await new Promise(r => setTimeout(r, 3000));
+        await new Promise(r => setTimeout(r, 5000));
     }
 
     console.log('\nAll pages done!');
