@@ -26,10 +26,10 @@ const TITLE_EXCLUDE = [
 
 // ── Right panel: company name exclusions ──────────────────────────────────────
 const COMPANY_EXCLUDE = [
-    "dataannotation", "booz allen hamilton", "inside higher ed", "tiktok",
+    "dataannotation", "booz allen hamilton", "inside higher ed", "tiktok", "ara",
     "handshake", "jobs via dice", "jobright.ai", "emonics llc", "hackajob",
     "haystack", "apex systems", "alignerr", "meta", "apple", "amazon",
-    "netflix", "google", "openai", "doordash", "shipt", "affirm", "thermo fisher scientific", "tata consultancy services", "alvarez & marsal", "scale.jobs", "qualcomm"
+    "netflix", "google", "openai", "doordash", "shipt", "affirm", "thermo fisher scientific", "tata consultancy services", "alvarez & marsal", "scale.jobs", "qualcomm", "lyft", "synergisticit"
 ];
 
 // ── Right panel: job description keyword exclusions ───────────────────────────
@@ -141,7 +141,7 @@ function filterCard(card) {
 
     // Skip if already viewed, saved, or applied
     const statusMatch = [...card.querySelectorAll('p')]
-        .find(p => /^(Saved|Applied)$/.test(p.innerText.trim()));
+        .find(p => /^(Viewed|Saved|Applied)$/.test(p.innerText.trim()));
     if (statusMatch) {
         return { pass: false, reason: `Already ${statusMatch.innerText.trim()}` };
     }
