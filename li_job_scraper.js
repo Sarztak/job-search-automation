@@ -29,7 +29,7 @@ const COMPANY_EXCLUDE = [
     "dataannotation", "booz allen hamilton", "inside higher ed", "tiktok", "ara",
     "handshake", "jobs via dice", "jobright.ai", "emonics llc", "hackajob",
     "haystack", "apex systems", "alignerr", "meta", "apple", "amazon",
-    "netflix", "google", "openai", "doordash", "shipt", "affirm", "thermo fisher scientific", "tata consultancy services", "alvarez & marsal", "scale.jobs", "qualcomm", "lyft", "synergisticit"
+    "netflix", "google", "openai", "doordash", "shipt", "affirm", "thermo fisher scientific", "tata consultancy services", "alvarez & marsal", "scale.jobs", "qualcomm", "lyft", "synergisticit", "jpmorgan"
 ];
 
 // ── Right panel: job description keyword exclusions ───────────────────────────
