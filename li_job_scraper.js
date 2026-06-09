@@ -4,6 +4,17 @@
 // for deeper checks, and saves qualifying jobs automatically.
 // ══════════════════════════════════════════════════════════════════════════════
 
+// right panel load TIMEOUT
+const RIGHT_PANEL_LOAD_TIME = 5000;
+
+// left card load TIMEOUT
+const LEFT_CARD_TIMEOUT = 500;
+
+// time between two cards loading
+const TIME_BETWEEN_LEFT_CARD_LOAD = 500;
+
+// next page load time
+const NEXT_PAGE_LOAD_TIME = 5000;
 
 // ── Right panel: job title must match one of these (case insensitive) ─────────
 const TITLE_INCLUDE = [
@@ -267,7 +278,6 @@ async function processCards() {
         const rawLabel = dismissBtn.getAttribute('aria-label');
         const cardTitle = rawLabel.replace(/^Dismiss\s+/, '').replace(/\s+job$/, '').trim();
         console.log(`--- Card: "${cardTitle}" ---`);
-        
 
         const card = dismissBtn.closest('div[role="button"]');
         if (!card) {
@@ -284,13 +294,13 @@ async function processCards() {
             showRightPanelBanner(false, cardResult.reason);
             skipped++;
             // dismissBtn.click();
-            await new Promise(r => setTimeout(r, 500));
+            await new Promise(r => setTimeout(r, LEFT_CARD_TIMEOUT));
             continue;
         }
 
         // Phase 1 passed — click to load right panel
         card.click();
-        await new Promise(r => setTimeout(r, 2000));
+        await new Promise(r => setTimeout(r, RIGHT_PANEL_LOAD_TIME));
 
         // Phase 2 — right panel filters and save
         const panelResult = filterAndSave();
@@ -308,7 +318,7 @@ async function processCards() {
 
         // Dismiss the card regardless of outcome so LinkedIn stops showing it
         // dismissBtn.click();
-        await new Promise(r => setTimeout(r, 500));
+        await new Promise(r => setTimeout(r, TIME_BETWEEN_LEFT_CARD_LOAD));
     }
 
     console.log(`\nDone! Saved: ${saved} | Skipped: ${skipped}`);
@@ -337,10 +347,10 @@ async function run(totalPages = 5) {
         }
 
         nextBtn.click();
-        await new Promise(r => setTimeout(r, 5000));
+        await new Promise(r => setTimeout(r, NEXT_PAGE_LOAD_TIME));
     }
 
     console.log('\nAll pages done!');
 }
 
-run(3);
+run(10);
