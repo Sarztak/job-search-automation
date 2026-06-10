@@ -5,13 +5,13 @@
 // ══════════════════════════════════════════════════════════════════════════════
 
 // right panel load TIMEOUT
-const RIGHT_PANEL_LOAD_TIME = 5000;
+const RIGHT_PANEL_LOAD_TIME = 3000;
 
 // left card load TIMEOUT
 const LEFT_CARD_TIMEOUT = 1000;
 
 // time between two cards loading
-const TIME_BETWEEN_LEFT_CARD_LOAD = 1000;
+const TIME_BETWEEN_LEFT_CARD_LOAD = 500;
 
 // next page load time
 const NEXT_PAGE_LOAD_TIME = 5000;
@@ -83,20 +83,34 @@ function addCardControls(card, key, passed) {
         justify-content: center;
     `;
 
-    btn.addEventListener('click', (e) => {
+    // the key and the card are captured in the closure -- the scope of the function 
+    // that is why card, key and passed need not be given to the function again when the button is pressed.
+    // the function holds a reference to card, key and passed even after addCardControls has returned.
+    // this is not simple!
+    btn.addEventListener('click', async (e) => {
         e.stopPropagation(); // prevent card click
+
+        // Load the card in the right panel
+        card.click();
+        await new Promise(r => setTimeout(r, RIGHT_PANEL_LOAD_TIME));
+
         if (passed) {
             seenJobs.delete(key);
+            const unsaveBtn = document.querySelector('button[aria-label="Unsave the job"]');
+            if (unsaveBtn) unsaveBtn.click();
+            // if the unsaveBtn is not found then the job was already applied to.
             btn.innerText = '+';
             btn.style.background = '#00c853';
             card.style.outline = '3px solid #d50000';
         } else {
             seenJobs.add(key);
+            const saveBtn = document.querySelector('button[aria-label="Save the job"]');
+            saveBtn.click();
             btn.innerText = '-';
             btn.style.background = '#d50000';
             card.style.outline = '3px solid #00c853';
         }
-        passed = !passed;
+        passed = !passed; // this is need in case the switch is toggled again and again
     });
 
     card.appendChild(btn);
