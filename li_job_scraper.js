@@ -139,45 +139,53 @@ function markCard(card, passed, reasons) {
         max-width: 70%;
     `;
 
+    card.appendChild(label);
+
     if (passed) {
         label.innerText = 'SAVED';
     } else {
-        label.innerText = `SKIPPED ▲ (${reasons.length})`;
+        label.innerText = `SKIPPED ▼ (${reasons.length})`;
 
         const dropdown = document.createElement('div');
         dropdown.className = 'dropdown';
+        card.appendChild(dropdown);
+
         dropdown.style.cssText = `
             display: none;
-            position: absolute;
-            background: #222;
+            position: fixed;
+            background: #2d2d2d;
             color: white;
-            font-size: 10px;
-            border-radius: 3px;
-            padding: 4px 8px;
-            min-width: 200px;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 6px;
+            padding: 8px 12px;
+            min-width: 220px;
+            max-width: 320px;
             z-index: 99999;
             pointer-events: none;
+            line-height: 1.6;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            white-space: normal;
+            word-wrap: break-word;
         `;
+
         dropdown.innerHTML = reasons.map(r => `<div>• ${r}</div>`).join('');
-        label.addEventListener('click', (e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            if (dropdown.style.display === 'none') {
-                const rect = label.getBoundingClientRect();
-                dropdown.style.position = 'fixed';
-                dropdown.style.bottom = `${window.innerHeight - rect.top + 4}px`;
-                dropdown.style.left = `${rect.left}px`;
-                dropdown.style.display = 'block';
-                label.innerText = `SKIPPED ▲ (${reasons.length})`;
-            } else {
-                dropdown.style.display = 'none';
-                label.innerText = `SKIPPED ▼ (${reasons.length})`;
-            }
+
+        // show on hover over label instead of click
+        label.addEventListener('mouseenter', () => {
+            const rect = label.getBoundingClientRect();
+            dropdown.style.bottom = `${window.innerHeight - rect.top + 4}px`;
+            dropdown.style.left = `${rect.left}px`;
+            dropdown.style.display = 'block';
+            label.innerText = `SKIPPED ▲ (${reasons.length})`;
         });
-        card.appendChild(dropdown);
+
+        label.addEventListener('mouseleave', () => {
+            dropdown.style.display = 'none';
+            label.innerText = `SKIPPED ▼ (${reasons.length})`;
+        });
     }
 
-    card.appendChild(label);
 }
 
 // Inject or update a banner at the top of the right panel
