@@ -105,7 +105,7 @@ function addCardControls(card, key, passed) {
         } else {
             seenJobs.add(key);
             const saveBtn = document.querySelector('button[aria-label="Save the job"]');
-            saveBtn.click();
+            if (saveBtn) saveBtn.click();
             btn.innerText = '-';
             btn.style.background = '#d50000';
             card.style.outline = '3px solid #00c853';
@@ -131,7 +131,6 @@ function markCard(card, passed, reasons) {
         z-index: 9999;
         font-size: 10px;
         font-weight: bold;
-        padding: 2px 6px;
         border-radius: 3px;
         color: white;
         background: ${passed ? '#00c853' : '#d50000'};
@@ -140,17 +139,16 @@ function markCard(card, passed, reasons) {
         max-width: 70%;
     `;
 
-    if (passed || reasons.length === 0) {
+    if (passed) {
         label.innerText = 'SAVED';
     } else {
-        label.innerText = `SKIPPED ▼ (${reasons.length})`;
+        label.innerText = `SKIPPED ▲ (${reasons.length})`;
 
         const dropdown = document.createElement('div');
+        dropdown.className = 'dropdown';
         dropdown.style.cssText = `
             display: none;
             position: absolute;
-            bottom: 100%;
-            left: 0;
             background: #222;
             color: white;
             font-size: 10px;
@@ -161,16 +159,22 @@ function markCard(card, passed, reasons) {
             pointer-events: none;
         `;
         dropdown.innerHTML = reasons.map(r => `<div>• ${r}</div>`).join('');
-
         label.addEventListener('click', (e) => {
             e.stopPropagation();
-            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
-            label.innerText = dropdown.style.display === 'none'
-                ? `SKIPPED ▼ (${reasons.length})`
-                : `SKIPPED ▲ (${reasons.length})`;
+            e.preventDefault();
+            if (dropdown.style.display === 'none') {
+                const rect = label.getBoundingClientRect();
+                dropdown.style.position = 'fixed';
+                dropdown.style.bottom = `${window.innerHeight - rect.top + 4}px`;
+                dropdown.style.left = `${rect.left}px`;
+                dropdown.style.display = 'block';
+                label.innerText = `SKIPPED ▲ (${reasons.length})`;
+            } else {
+                dropdown.style.display = 'none';
+                label.innerText = `SKIPPED ▼ (${reasons.length})`;
+            }
         });
-
-        label.appendChild(dropdown);
+        card.appendChild(dropdown);
     }
 
     card.appendChild(label);
@@ -275,7 +279,7 @@ function filterCard(card) {
 
     const passed = reasons.length === 0;
 
-    return {passed: passed, reasons: reasons};
+    return { passed: passed, reasons: reasons };
 }
 
 
@@ -300,7 +304,7 @@ function filterAndSave() {
     // Get full page text once for both experience and description checks
     const jobPage = document.querySelector('div[data-sdui-screen="com.linkedin.sdui.flagshipnav.jobs.SemanticJobDetails"]')
     if (!jobPage) {
-        return {passed: false, jobTitle: null, companyName: null, reasons: ['Could not find job page']};
+        return { passed: false, jobTitle: null, companyName: null, reasons: ['Could not find job page'] };
     }
 
     const pageText = jobPage.innerText.toLowerCase(); // get the job description raw text
@@ -364,12 +368,12 @@ function filterAndSave() {
 
     // if any reasons collected then skip
     if (reasons.length > 0) {
-        return {passed: false, jobTitle: jobTitle, companyName: companyName, reasons: reasons};
+        return { passed: false, jobTitle: jobTitle, companyName: companyName, reasons: reasons };
     }
 
     // save the job if all the check passed
     saveBtn.click();
-    return {passed: true, jobTitle: jobTitle, companyName: companyName, reasons: reasons};
+    return { passed: true, jobTitle: jobTitle, companyName: companyName, reasons: reasons };
 }
 
 function create_job_company_key(jobName, companyName) {
@@ -430,27 +434,27 @@ async function processCards() {
 
         // Phase 2 — right panel filters and save
         const panelResult = filterAndSave();
-    
-    const key = (panelResult.jobTitle && panelResult.companyName)
-        ? create_job_company_key(panelResult.jobTitle, panelResult.companyName)
-        : null;
 
-    if (!panelResult.passed || !cardResult.passed) {
-        const allReasons = [...panelResult.reasons, ...cardResult.reasons];
-        console.log(`SKIP: ${allReasons}`);
-        markCard(card, false, allReasons);
-        if (key) addCardControls(card, key, false);
-        skipped++;
-    } else {
-        console.log(`SAVED: "${panelResult.jobTitle}" at ${panelResult.companyName}`);
-        markCard(card, true, []);
-        if (key) addCardControls(card, key, true);
-        saved++;
-    }
-            // Dismiss the card regardless of outcome so LinkedIn stops showing it
-            // dismissBtn.click();
-            await new Promise(r => setTimeout(r, TIME_BETWEEN_LEFT_CARD_LOAD));
+        const key = (panelResult.jobTitle && panelResult.companyName)
+            ? create_job_company_key(panelResult.jobTitle, panelResult.companyName)
+            : null;
+
+        if (!panelResult.passed || !cardResult.passed) {
+            const allReasons = [...panelResult.reasons, ...cardResult.reasons];
+            console.log(`SKIP: ${allReasons}`);
+            markCard(card, false, allReasons);
+            if (key) addCardControls(card, key, false);
+            skipped++;
+        } else {
+            console.log(`SAVED: "${panelResult.jobTitle}" at ${panelResult.companyName}`);
+            markCard(card, true, []);
+            if (key) addCardControls(card, key, true);
+            saved++;
         }
+        // Dismiss the card regardless of outcome so LinkedIn stops showing it
+        // dismissBtn.click();
+        await new Promise(r => setTimeout(r, TIME_BETWEEN_LEFT_CARD_LOAD));
+    }
 
     console.log(`\nDone! Saved: ${saved} | Skipped: ${skipped}`);
 }
