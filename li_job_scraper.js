@@ -380,7 +380,6 @@ function filterAndSave() {
     }
 
     // save the job if all the check passed
-    saveBtn.click();
     return { passed: true, jobTitle: jobTitle, companyName: companyName, reasons: reasons };
 }
 
@@ -447,8 +446,14 @@ async function processCards() {
             ? create_job_company_key(panelResult.jobTitle, panelResult.companyName)
             : null;
 
+        const allReasons = [...panelResult.reasons, ...cardResult.reasons];
+
+        if (allReasons.length == 0) {
+            const saveBtn = document.querySelector('button[aria-label="Save the job"]');
+            saveBtn.click();
+        }
+
         if (!panelResult.passed || !cardResult.passed) {
-            const allReasons = [...panelResult.reasons, ...cardResult.reasons];
             console.log(`SKIP: ${allReasons}`);
             markCard(card, false, allReasons);
             if (key) addCardControls(card, key, false);
