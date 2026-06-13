@@ -11,10 +11,10 @@ const RIGHT_PANEL_LOAD_TIME = 3000;
 const LEFT_CARD_TIMEOUT = 1000;
 
 // time between two cards loading
-const TIME_BETWEEN_LEFT_CARD_LOAD = 500;
+const TIME_BETWEEN_LEFT_CARD_LOAD = 1000;
 
 // next page load time
-const NEXT_PAGE_LOAD_TIME = 5000;
+const NEXT_PAGE_LOAD_TIME = 3000;
 
 // session level job + company name storage
 const seenJobs = new Set();
@@ -48,13 +48,17 @@ const COMPANY_EXCLUDE = [
 
 // ── Right panel: job description keyword exclusions ───────────────────────────
 const DESCRIPTION_EXCLUDE = [
-    "sponsorship", "sponsoring", "tsa", "tsc/sci", "polygraph", "clearance", "clearances", "green card", "must be a us citizen", "must be a u.s. citizen", "us citizenship", "u.s. citizenship", "us work authorization", "u.s. work authorization"
+    "sponsorship", "sponsoring", "tsa", "tsc/sci", "polygraph", "clearance", "clearances", "green card", "must be a us citizen", "must be a u.s. citizen", "us citizenship", "u.s. citizenship", "us work authorization", "u.s. work authorization", "permanent resident", "u.s. citizens", "us citizens", "national security", "ts/sci", "will not sponsor"
 ];
 
 // ── Right panel: experience year pattern to exclude ───────────────────────────
 // Matches "3+ years", "4+ years", "5+ years", "6+ years" etc.
-const EXPERIENCE_EXCLUDE = /\b([3-9]|10)\+?\s*years?\s+of\s+experience\b/i;
-
+// 5+ years experience
+// 5–7 years in product
+// 10+ years in AI/ML engineering
+// const EXPERIENCE_EXCLUDE = /\b([3-9]|10)\+?\s*years?\s+(of)?.*experience\b/i;
+const EXPERIENCE_EXCLUDE = /\b(?:(?:[3-9]|1\d)\+?|(?:[3-9]|1\d)\s*[–-]\s*\d+)\s*years\b/i;
+// const EXPERIENCE_EXCLUDE_2 = /\b([3-9]|10)-([3-9]|10)\s*years?\s+(of)?.*experience\b/i;
 
 // ══════════════════════════════════════════════════════════════════════════════
 // VISUALS
@@ -318,8 +322,8 @@ function filterAndSave() {
     const pageText = jobPage.innerText.toLowerCase(); // get the job description raw text
 
     // Description — must not contain excluded keywords for sponsorship and clearance
-    const descMatch = DESCRIPTION_EXCLUDE.find(k => new RegExp(`\\b${k}\\b`, 'i').test(pageText));
-    if (descMatch) reasons.push(`Description contains "${descMatch}"`);
+    const descMatches = DESCRIPTION_EXCLUDE.filter(k => new RegExp(`\\b${k}\\b`, 'i').test(pageText));
+    if (descMatches.length > 0) reasons.push(`Description contains "${descMatches.join('", "')}"`);
 
     // experience — must not require more than 3 years
     if (EXPERIENCE_EXCLUDE.test(pageText)) {
@@ -361,7 +365,7 @@ function filterAndSave() {
     // However, LinkedIn won't stop showing that even if it is dismissed.
 
     // check if the key has already been seen during the session
-    if (reasons.length == 0 && jobTitle && companyName) {
+    if (jobTitle && companyName) {
         const key = create_job_company_key(jobTitle, companyName);
         if (seenJobs.has(key)) {
             reasons.push('Job already seen this session');
