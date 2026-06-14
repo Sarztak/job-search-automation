@@ -505,4 +505,11 @@ async function run(totalPages = 5) {
     console.log('\nAll pages done!');
 }
 
-run(10);
+const btn = document.createElement('button');
+btn.innerText = 'Scrap Jobs';
+btn.style.cssText = 'position:fixed; top:10px; right:10px; z-index:9999; padding:10px 20px; background:blue; color:white; border:none; border-radius:5px; cursor:pointer; font-size:16px;';
+document.body.appendChild(btn);
+btn.addEventListener('click', () => {
+    run(10);
+    btn.remove();
+});
