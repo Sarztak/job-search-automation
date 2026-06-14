@@ -5,7 +5,7 @@
 // ══════════════════════════════════════════════════════════════════════════════
 
 // right panel load TIMEOUT
-const RIGHT_PANEL_LOAD_TIME = 3000;
+const RIGHT_PANEL_LOAD_TIME = 1000;
 
 // left card load TIMEOUT
 const LEFT_CARD_TIMEOUT = 1000;
@@ -40,10 +40,7 @@ const TITLE_EXCLUDE = [
 
 // ── Right panel: company name exclusions ──────────────────────────────────────
 const COMPANY_EXCLUDE = [
-    "dataannotation", "booz allen hamilton", "inside higher ed", "tiktok", "ara",
-    "handshake", "jobs via dice", "jobright.ai", "emonics llc", "hackajob",
-    "haystack", "apex systems", "alignerr", "meta", "apple", "amazon",
-    "netflix", "google", "openai", "doordash", "shipt", "affirm", "thermo fisher scientific", "tata consultancy services", "alvarez & marsal", "scale.jobs", "qualcomm", "lyft", "synergisticit", "jpmorgan"
+    "dataannotation", "booz allen hamilton", "inside higher ed", "tiktok", "ara", "microsoft", "handshake", "jobs via dice", "jobright.ai", "emonics llc", "hackajob", "haystack", "apex systems", "alignerr", "meta", "apple", "amazon", "netflix", "google", "openai", "doordash", "shipt", "affirm", "thermo fisher scientific", "tata consultancy services", "alvarez & marsal", "scale.jobs", "qualcomm", "lyft", "synergisticit", "jpmorgan"
 ];
 
 // ── Right panel: job description keyword exclusions ───────────────────────────
@@ -56,9 +53,8 @@ const DESCRIPTION_EXCLUDE = [
 // 5+ years experience
 // 5–7 years in product
 // 10+ years in AI/ML engineering
-// const EXPERIENCE_EXCLUDE = /\b([3-9]|10)\+?\s*years?\s+(of)?.*experience\b/i;
+// also matches something like 18 years which is a false positive -- will solve later TODO
 const EXPERIENCE_EXCLUDE = /\b(?:(?:[3-9]|1\d)\+?|(?:[3-9]|1\d)\s*[–-]\s*\d+)\s*years\b/i;
-// const EXPERIENCE_EXCLUDE_2 = /\b([3-9]|10)-([3-9]|10)\s*years?\s+(of)?.*experience\b/i;
 
 // ══════════════════════════════════════════════════════════════════════════════
 // VISUALS
@@ -403,6 +399,17 @@ function normalize_str(s) {
 // MAIN — iterate through all cards
 // ══════════════════════════════════════════════════════════════════════════════
 
+// auxiliary function to wait for expandTextBtn that hides the job description
+async function waitForExpandTextBtn(timeout = 10000) {
+    const start = Date.now();
+    while (Date.now() - start < timeout) {
+        const btn = document.querySelector('button[data-testid="expandable-text-button"');
+        if (btn) return btn;
+        await new Promise(r => setTimeout(r, 1000));
+    }
+    return null; 
+}
+
 async function processCards() {
     const searchResults = document.querySelector('div[componentkey="SearchResultsMainContent"]')
     const dismissBtns = searchResults.querySelectorAll('button[aria-label^="Dismiss"]');
@@ -424,24 +431,18 @@ async function processCards() {
 
         // Phase 1 — left card filters
         const cardResult = filterCard(card);
-        // if (!cardResult.pass) {
-        //     console.log(`SKIP (card): ${cardResult.reason}`);
-        //     markCard(card, false, cardResult.reason);
-        //     showRightPanelBanner(false, cardResult.reason);
-        //     skipped++;
-        //     // dismissBtn.click();
-        //     await new Promise(r => setTimeout(r, LEFT_CARD_TIMEOUT));
-        //     continue;
-        // }
 
         // Phase 1 passed — click to load right panel
         card.click();
         await new Promise(r => setTimeout(r, RIGHT_PANEL_LOAD_TIME));
 
-        // Retry again if the company link not found
-        if (document.querySelector('a[href*="/company/"]')) {
-            await new Promise(r => setTimeout(r, RIGHT_PANEL_LOAD_TIME));
-        }
+        // Retry until expandTextBtn is found or 10 sec
+        const expandTextBtn = await waitForExpandTextBtn(timeout = 10000);
+        console.log(expandTextBtn, typeof expandTextBtn);
+        if (expandTextBtn) expandTextBtn.click();
+
+        // wait for text to load
+        await new Promise(r => setTimeout(r, RIGHT_PANEL_LOAD_TIME));
 
         // Phase 2 — right panel filters and save
         const panelResult = filterAndSave();
@@ -511,5 +512,5 @@ btn.style.cssText = 'position:fixed; top:10px; right:10px; z-index:9999; padding
 document.body.appendChild(btn);
 btn.addEventListener('click', () => {
     run(10);
-    btn.remove();
+    btn.remove(); // remove the button once pressed, it is only used to trigger once 
 });
