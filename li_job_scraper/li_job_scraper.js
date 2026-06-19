@@ -40,7 +40,7 @@ const TITLE_EXCLUDE = [
 
 // ── Right panel: company name exclusions ──────────────────────────────────────
 const COMPANY_EXCLUDE = [
-    "dataannotation", "booz allen hamilton", "inside higher ed", "tiktok", "ara", "microsoft", "handshake", "jobs via dice", "jobright.ai", "emonics llc", "hackajob", "haystack", "apex systems", "alignerr", "meta", "apple", "amazon", "netflix", "google", "openai", "doordash", "shipt", "affirm", "thermo fisher scientific", "tata consultancy services", "alvarez & marsal", "scale.jobs", "qualcomm", "lyft", "synergisticit", "jpmorgan"
+    "dataannotation", "booz allen hamilton", "inside higher ed", "tiktok", "ara", "microsoft", "handshake", "jobs via dice", "jobright.ai", "emonics llc", "hackajob", "haystack", "apex systems", "alignerr", "meta", "apple", "amazon", "netflix", "google", "openai", "doordash", "shipt", "affirm", "thermo fisher scientific", "tata consultancy services", "alvarez & marsal", "scale.jobs", "qualcomm", "lyft", "synergisticit", "jpmorgan", "remotehunter"
 ];
 
 // ── Right panel: job description keyword exclusions ───────────────────────────
@@ -469,8 +469,12 @@ async function processCards() {
             if (key) addCardControls(card, key, true);
             saved++;
         }
-        // Dismiss the card regardless of outcome so LinkedIn stops showing it
-        // dismissBtn.click();
+        // dismiss the card if already applied to, saved or viewed
+        // that is the cardResults reasons are not zero
+        if (cardResult.reasons.length != 0) {
+            dismissBtn.click();
+        }
+
         await new Promise(r => setTimeout(r, TIME_BETWEEN_LEFT_CARD_LOAD));
     }
 
@@ -511,6 +515,6 @@ btn.innerText = 'Scrap Jobs';
 btn.style.cssText = 'position:fixed; top:10px; right:10px; z-index:9999; padding:10px 20px; background:blue; color:white; border:none; border-radius:5px; cursor:pointer; font-size:16px;';
 document.body.appendChild(btn);
 btn.addEventListener('click', () => {
-    run(10);
+    run(30);
     btn.remove(); // remove the button once pressed, it is only used to trigger once 
 });
