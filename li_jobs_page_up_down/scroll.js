@@ -49,7 +49,6 @@ function injectScrollButtons() {
     const container = document.createElement('div');
     container.id = 'scroll-btn-container';
     container.style.cssText = CONTAINER_STYLE;
-    // container.style.cssText = 'position:fixed; top:50%; left:80px; z-index:9999; opacity:0; transition:opacity 0.2s ease;';
     container.addEventListener('mouseenter', () => container.style.opacity = '1');
     container.addEventListener('mouseleave', () => container.style.opacity = '0');
 
@@ -70,13 +69,6 @@ function injectScrollButtons() {
         const ws = getScrollContainer();
         if (ws) ws.scrollTo({ top: ws.scrollHeight, behavior: 'smooth' });
     });
-
-
-    // container.style.cssText = 'position:fixed; top:50%; left:80px; z-index:9999; opacity:0; transition:opacity 0.2s ease; width:100px; height:160px;';
-
-    // scrollTopBtn.style.cssText = 'display:block; width:100%; height:50%; background:#0a66c2; color:white; border:none; border-radius:50px 50px 0 0; cursor:pointer; font-size:16px; box-shadow:0 2px 8px rgba(0,0,0,0.3); box-sizing:border-box;';
-
-    // scrollBottomBtn.style.cssText = 'display:block; width:100%; height:50%; background:#0a66c2; color:white; border:none; border-radius:0 0 50px 50px; cursor:pointer; font-size:16px; box-shadow:0 2px 8px rgba(0,0,0,0.3); box-sizing:border-box;';
 
     [scrollTopBtn, scrollBottomBtn].forEach(btn => {
         btn.addEventListener('mousedown', () => {
