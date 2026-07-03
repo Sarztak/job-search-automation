@@ -4,6 +4,9 @@
 // for deeper checks, and saves qualifying jobs automatically.
 // ══════════════════════════════════════════════════════════════════════════════
 
+// posted time limit in days
+const postedTimeLimit = 3;
+
 // right panel load TIMEOUT
 const RIGHT_PANEL_LOAD_TIME = 1000;
 
@@ -40,7 +43,7 @@ const TITLE_EXCLUDE = [
 
 // ── Right panel: company name exclusions ──────────────────────────────────────
 const COMPANY_EXCLUDE = [
-    "dataannotation", "booz allen hamilton", "inside higher ed", "tiktok", "ara", "microsoft", "handshake", "jobs via dice", "jobright.ai", "emonics llc", "hackajob", "haystack", "apex systems", "alignerr", "meta", "apple", "amazon", "netflix", "google", "openai", "doordash", "shipt", "affirm", "thermo fisher scientific", "tata consultancy services", "alvarez & marsal", "scale.jobs", "qualcomm", "lyft", "synergisticit", "jpmorgan", "remotehunter"
+    "dataannotation", "booz allen hamilton", "inside higher ed", "tiktok", "ara", "microsoft", "handshake", "jobs via dice", "jobright.ai", "emonics llc", "hackajob", "haystack", "apex systems", "alignerr", "meta", "apple", "amazon", "netflix", "google", "openai", "doordash", "shipt", "affirm", "thermo fisher scientific", "tata consultancy services", "alvarez & marsal", "scale.jobs", "qualcomm", "lyft", "synergisticit", "jpmorgan", "remotehunter", "tech consulting", "talentally"
 ];
 
 // ── Right panel: job description keyword exclusions ───────────────────────────
@@ -54,7 +57,12 @@ const DESCRIPTION_EXCLUDE = [
 // 5–7 years in product
 // 10+ years in AI/ML engineering
 // also matches something like 18 years which is a false positive -- will solve later TODO
-const EXPERIENCE_EXCLUDE = /\b(?:(?:[3-9]|1\d)\+?|(?:[3-9]|1\d)\s*[–-]\s*\d+)\s*years\b/i;
+// const EXPERIENCE_EXCLUDE = /\b(?:(?:[3-9]|1\d)\+?|(?:[3-9]|1\d)\s*[–-]\s*\d+)\s*years\b/i;
+// there was an issue with the previous approach where 2-4 years matched 4 years part
+// so a negative look behind was included with the assumptions that 2-4 won't have
+// space after dash/ em dash part.
+// a negative lookbehind to exclude cases where the number is preceded by a lower number and a dash
+const EXPERIENCE_EXCLUDE =/(?<![–\-\d])\b(?:[3-9]|1\d)(?:\+|\s*[–-]\s*\d+)?\+?\s*years\b/i;
 
 // ══════════════════════════════════════════════════════════════════════════════
 // VISUALS
@@ -281,7 +289,7 @@ function filterCard(card) {
                                 : unit === 'minute' ? value / 1440
                                     : 0;
 
-            if (days > 14) reasons.push(`Too old — "${timeText}"`);
+            if (days > postedTimeLimit) reasons.push(`Too old — "${timeText}"`);
         }
     }
 
